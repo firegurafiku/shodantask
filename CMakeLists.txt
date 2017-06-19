@@ -2,7 +2,7 @@
 add_executable(shodan-task
     MemoryMappedFile.hpp
     MemoryMappedFile.cpp
-    main.cpp
+    main2.cpp
     README.txt)
 
 set_target_properties(shodan-task PROPERTIES
