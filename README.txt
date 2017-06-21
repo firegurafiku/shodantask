@@ -8,7 +8,8 @@ test can easily be solved with a regular expression. Good news, C++11 had
 introduced regex facilities into the standard library years ago. Bad news,
 'std::regex_search' wants a pair of bidirectional iterators in order to get
 its job done (obviously, since many regular expressions need to backtrack
-during their matching). I can come with two three solutions here.
+during their matching). After thinking a bit, I came up with three possible
+solutions for the iterator problem.
 
 
 Considered approaches
@@ -66,8 +67,8 @@ limited data caching. I played with it a bit, but it turned out to be
 rather unproductive. So, this solution is not implemented.
 
 
-Presuppositions
----------------
+Implementation notes
+--------------------
 
 The task formulation leaves a lot of room for creativity. Namely, it doesn't
 say which language standard is accepted or whether third-party libraries
@@ -77,3 +78,18 @@ solve by using:
   - C++11,
   - #pragma once,
   - Boost.
+
+I know, the above things combined can drive some many people insane, but
+it's just a test assignment, so it must be tolerant to the experimentation.
+
+In order to make you (== Shodan and co.) especially mad, I decided to use
+Boost.Coroutine's yield to return matched substrings one by one. I tried
+with Coroutine2, but they broke something in exception propagation, so it
+didn't work for me. I thing, I'm going to file a bug report to the devs
+some days later.
+
+I think I did somewhere near my best during writing this code, so I will be
+very grateful to receive a (reasonably) detailed review about it. Any
+critique is welcome, even (especially?) about the grammar and spelling.
+
+--- Pavel Kretov.
