@@ -4,10 +4,7 @@
 extern "C" {
     #include <errno.h>
     #include <fcntl.h>
-    #include <string.h>
     #include <sys/mman.h>
-    #include <sys/stat.h>
-    #include <sys/types.h>
 }
 
 MemoryMappedFile::MemoryMappedFile()
@@ -58,7 +55,10 @@ void MemoryMappedFile::open() {
     if (length == -1)
         goto e_failure;
 
-    addr = ::mmap(0, length, PROT_READ, MAP_SHARED, fd, 0);
+    if (length > SIZE_MAX)
+        goto e_failure;
+
+    addr = ::mmap(0, (size_t)length, PROT_READ, MAP_SHARED, fd, 0);
     if (addr == MAP_FAILED)
         goto e_failure;
 
@@ -68,7 +68,7 @@ void MemoryMappedFile::open() {
     // Delay these assignments until the moment when nothing bad
     // can happen. Exception safety, kinda.
     mRegionAddr = addr;
-    mRegionLength = length;
+    mRegionLength = (size_t)length;
     return;
 
 e_failure:

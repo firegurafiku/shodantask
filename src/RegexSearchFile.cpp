@@ -5,7 +5,7 @@
 #include "MemoryMappedFile.hpp"
 
 /*
- * Boost.CircularBuffer is too peeky about its iterators in debug mode and
+ * Boost.CircularBuffer is too peaky about its iterators in debug mode and
  * triggers an *assert* even on innocent-looking code like this:
  *
  *     boost::circular_buffer<char> cb;
@@ -73,7 +73,7 @@ void regexSearchFileBuf(RegexSearchCo::push_type& yield,
             break;
 
         size_t margin = hadMatches
-                ? buf.end() - lastMatchEnd
+                ? size_t(buf.end() - lastMatchEnd)
                 : maxMatchLen;
 
         populate(buf.capacity() - margin);

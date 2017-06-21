@@ -39,7 +39,7 @@ before including the corresponding header.
 ### The not-so-portable
 
 Just 'mmap()' the file and get these bidirectional iterators for free. Now
-it's the operating system's headeache to fetch and unload pages while
+it's the operating system's headache to fetch and unload pages while
 the regex is walking down the memory.
 
 Unfortunately, this solution is:
@@ -51,7 +51,7 @@ Unfortunately, this solution is:
 ### The stupid
 
 Since the problem's URL pattern in its original formulation doesn't really
-need to backtrack anything (no 'http:' or 'https:' substring can apper in
+need to backtrack anything (no 'http:' or 'https:' substring can appear in
 the middle of a URL), iterator's 'operator --' will actually never be
 called by 'std::regex_search'. Let's just provide a dummy operator:
 
@@ -61,7 +61,7 @@ called by 'std::regex_search'. Let's just provide a dummy operator:
 
 In reality this (obviously) doesn't work. Even though the regex doesn't
 need backtracking, the operator got called pretty often. However, it's
-possible to derive from the class and implement a rudimentaty support for
+possible to derive from the class and implement a rudimentary support for
 limited data caching. I played with it a bit, but it turned out to be
 rather unproductive. So, this solution is not implemented.
 
@@ -76,4 +76,4 @@ solve by using:
 
   - C++11,
   - #pragma once,
-  - some classes from Boost.
+  - Boost.
