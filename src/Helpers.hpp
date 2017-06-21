@@ -13,7 +13,7 @@
  */
 template <class InputIt, class OutputIt>
 std::tuple<InputIt, OutputIt> copyUpTo(InputIt first, InputIt last,
-                                         size_t count, OutputIt dest){
+                                       size_t count, OutputIt dest){
     InputIt it = first;
     for ( ; it != last && count != 0; --count, ++it) {
         *dest = *it;
@@ -55,8 +55,7 @@ auto regexSearchAll(BidirIt first, BidirIt last, std::regex const& rex)
  *         ; // do something useful with 'result'.
  */
 template <typename Coro, typename Anything, typename... Args>
-auto spawn(Anything func, Args&&... args)
-    -> typename Coro::pull_type {
+auto spawn(Anything func, Args&&... args) -> typename Coro::pull_type {
 
     auto wrapped_func = [&](typename Coro::push_type& yield) {
         return func(yield, std::forward<Args>(args)...);
