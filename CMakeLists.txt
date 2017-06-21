@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.6)
 project(shodantask)
 
 add_executable(shodan-task
-    MemoryMappedFile.hpp
-    MemoryMappedFile.cpp
-    RegexSearchFile.hpp
-    RegexSearchFile.cpp
-    Helpers.hpp
-    main2.cpp
+    src/Helpers.hpp
+    src/MemoryMappedFile.cpp
+    src/MemoryMappedFile.hpp
+    src/RegexSearchFile.cpp
+    src/RegexSearchFile.hpp
+    src/main.cpp
     README.txt)
 
 target_link_libraries(shodan-task -lboost_system -lboost_coroutine)
