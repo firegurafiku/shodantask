@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(shodantask)
 
-add_executable(shodan-task
+add_executable(shodantask
     src/Helpers.hpp
     src/MemoryMappedFile.cpp
     src/MemoryMappedFile.hpp
@@ -10,8 +10,8 @@ add_executable(shodan-task
     src/main.cpp
     README.txt)
 
-target_link_libraries(shodan-task -lboost_system -lboost_coroutine)
+target_link_libraries(shodantask -lboost_system -lboost_coroutine)
 
-set_target_properties(shodan-task PROPERTIES
+set_target_properties(shodantask PROPERTIES
     CXX_STANDARD_REQUIRED FALSE
     CXX_STANDARD          11)
