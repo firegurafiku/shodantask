@@ -14,7 +14,9 @@ public:
     ~MemoryMappedFile();
 
     void open();
-    void close();
+    void close(bool noThrow = false);
+
+    bool isOpen() const { return mRegionAddr != nullptr; }
 
     const_iterator begin() const {
         return static_cast<char*>(mRegionAddr);

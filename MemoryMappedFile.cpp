@@ -2,12 +2,12 @@
 #include <system_error>
 
 extern "C" {
-    #include <sys/types.h>
-    #include <sys/stat.h>
-    #include <string.h>
-    #include <fcntl.h>
     #include <errno.h>
+    #include <fcntl.h>
+    #include <string.h>
     #include <sys/mman.h>
+    #include <sys/stat.h>
+    #include <sys/types.h>
 }
 
 MemoryMappedFile::MemoryMappedFile()
@@ -30,11 +30,19 @@ MemoryMappedFile::MemoryMappedFile(std::string const& filename)
 }
 
 MemoryMappedFile::~MemoryMappedFile() {
-    try {
-        close();
-    } catch (...) {
-        // Life is hard.
-    }
+
+    // Everybody knows destructors must not throw (someone even knows why).
+    // So, in this code I used the simple 'catch (...)' approach at first,
+    // but then I read the following sentence in the Boost.Coroutine2 docs:
+    //
+    //   "Code executed by coroutine-function must not prevent the
+    //    propagation of the 'detail::forced_unwind' exception. Absorbing
+    //    that exception will cause stack unwinding to fail."
+    //
+    // Since I can never be sure about some library not trying to abuse
+    // exceptions for execution flow control, I solemnly swear not to
+    // use 'catch (...)' for the rest of my life.
+    close(true);
 }
 
 void MemoryMappedFile::open() {
@@ -44,7 +52,7 @@ void MemoryMappedFile::open() {
 
     fd = ::open(mFilename.c_str(), O_RDONLY, 0);
     if (fd == -1)
-        goto e_failure;
+        goto e_failure; // I've never been a member of Dijkstra's fan-club.
 
     length = ::lseek(fd, 0, SEEK_END);
     if (length == -1)
@@ -57,7 +65,8 @@ void MemoryMappedFile::open() {
     if (::close(fd) == -1)
         goto e_failure;
 
-    //
+    // Delay these assignments until the moment when nothing bad
+    // can happen. Exception safety, kinda.
     mRegionAddr = addr;
     mRegionLength = length;
     return;
@@ -65,15 +74,16 @@ void MemoryMappedFile::open() {
 e_failure:
     int errorNo = errno;
     if (fd != -1) {
-        // Sorry, no more error handling for today.
+        // Sorry, no more error handling for today. To be honest,
+        // I just don't know what the program should do if the following
+        // call fails.
         ::close(fd);
     }
 
     throw std::system_error(errorNo, std::system_category(), mFilename);
 }
 
-
-void MemoryMappedFile::close() {
+void MemoryMappedFile::close(bool noThrow) {
     if (mRegionAddr == nullptr)
         return;
 
@@ -85,5 +95,8 @@ void MemoryMappedFile::close() {
     return;
 
 e_failure:
+    if (noThrow)
+        return;
+
     throw std::system_error(errno, std::system_category(), mFilename);
 }
