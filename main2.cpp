@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
     // The simplistic regex to find URLs (to find just as many patters,
     // as the problem formulation asks for). However, it can easily be
     // make as comprehensive as needed.
-    constexpr auto urlRegexExpr = "(https?)://([a-z.-]+)(/[a-z_.,/+-]*)?";
-                                // 1          2        3
+    constexpr auto urlRegexExpr = "(https?)://([\\w.-]+)(/[\\w_.,/+-]*)?";
+                                // 1          2         3
 
     std::regex rex(urlRegexExpr, std::regex::icase);
 
