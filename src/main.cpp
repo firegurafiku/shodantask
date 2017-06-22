@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     using FrequencyMap = std::unordered_map<std::string, int>;
 
     FrequencyMap hosts, paths;
+    int numMatches = 0;
     for (auto const& match: coro) {
         // At this place some additional cleanup and canonicalization
         // should be done. But the task doesn't insist on that.
@@ -44,6 +45,8 @@ int main(int argc, char *argv[]) {
         std::string path = match.str(3);
         if (path.empty())
             path = "/";
+
+        ++numMatches;
 
         auto ihost = hosts.find(host);
         if (ihost != hosts.end())
@@ -90,6 +93,9 @@ int main(int argc, char *argv[]) {
         }
     };
 
+    std::cout << "total urls " << numMatches   << ", "
+              << "domains "    << hosts.size() << ", "
+              << "paths "      << paths.size() << std::endl;
     std::cout << "Most frequent hostnames:" << std::endl;
     printTop(hosts);
 
