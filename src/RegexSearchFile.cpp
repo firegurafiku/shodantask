@@ -52,8 +52,8 @@ void regexSearchFileBuf(RegexSearchCo::push_type& yield,
 
     // A shorthand for convenience.
     auto populate = [&fileIter, &fileEnd, &buf](size_t n) {
-        std::tie(fileIter, std::ignore) =
-                copyUpTo(fileIter, fileEnd, n, std::back_inserter(buf));
+        for (size_t i=0; i<n; ++i)
+            buf.push_back(*fileIter++);
     };
 
     populate(buf.capacity());
