@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
     RegexSearchCo::pull_type coro =
         method == "mmap" ? spawn<RegexSearchCo>(regexSearchFileMmap, inputFn, rex)
-      : method == "buf"  ? spawn<RegexSearchCo>(regexSearchFileBuf, inputFn, rex, 100, 4096)
+      : method == "buf"  ? spawn<RegexSearchCo>(regexSearchFileBuf, inputFn, rex, 100, 32*1024)
       : throw std::invalid_argument("lookup method unsupported");
 
     using FrequencyMap = std::unordered_map<std::string, int>;
