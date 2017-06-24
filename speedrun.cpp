@@ -20,6 +20,7 @@
  */
 using UIndex = std::size_t;
 
+/* Long names are bad if your're an adept of the Eighty Column religion. */
 using FrequencyMap = std::unordered_map<std::string, unsigned>;
 
 /*
@@ -49,7 +50,8 @@ public:
     /*
      * Index the underlying array with a wrapped around index value. Since
      * every possible 'idx' value is correct, these functions must be used
-     * with care.
+     * with care. More over, to tell the truth, dealing with ring buffer
+     * idices really hurts.
      */
     T const& operator [] (UIndex idx) const { return buf[idx % N]; }
     T      & operator [] (UIndex idx)       { return buf[idx % N]; }
@@ -63,7 +65,8 @@ private:
  * An ad-hoc implementation for a function which looks for literal sting
  * "http" in a ring buffer of chars. It uses Wikipedia's implementation of
  * Boyer-Moore string search algorithm with search tables precalculated
- * for the particular search pattern.
+ * for the particular search pattern. Shodan, this part of code is written
+ * this way especially for you. Enjoy :).
  */
 template <UIndex N>
 bool findHttp(RingArray<char, N> const& buf,
@@ -104,7 +107,7 @@ bool findHttp(RingArray<char, N> const& buf,
 
     UIndex i = patlen-1 +1;
     while (i < stringlen+1) {
-        int j = patlen-1;
+        int j = patlen-1; // Don't make unsigned!
         while (j >= 0 && (buf[begin+i-1] == pat[j])) {
             --i;
             --j;
@@ -123,9 +126,29 @@ bool findHttp(RingArray<char, N> const& buf,
     return false;
 }
 
+/*
+ * Finds the first thing looking like an URL in the circular buffer 'buf'
+ * in the [begin, end) range. If an URL was found, the function returns
+ * 'true' and sets its results like in the following example:
+ *
+ *     https://www.youtube.com/watch?v=oHg5SJYRHA0
+ *     ^       ^ domainBegin  ^     ^ urlEnd
+ *     urlBegin               pathBegin
+ *
+ * If the function hasn't found anything like an URL, or found a thing
+ * what, if continued beyond the 'end', may cause a longer match, it sets
+ * all these four results to the same value which should be treated as the
+ * search re-run point.
+ */
 template <UIndex N>
 bool findUrl(RingArray<char, N> const& buf,
-             UIndex begin, UIndex end, UIndex& urlBegin, UIndex& domainBegin, UIndex& pathBegin, UIndex& urlEnd) {
+             UIndex  begin,
+             UIndex  end,
+             UIndex& urlBegin,
+             UIndex& domainBegin,
+             UIndex& pathBegin,
+             UIndex& urlEnd) {
+             // More arguments for the god of arguments.
 
     UIndex httpBegin, httpEnd;
     bool foundHttp = findHttp(buf, begin, end, httpBegin, httpEnd);
@@ -144,16 +167,28 @@ bool findUrl(RingArray<char, N> const& buf,
     };
 
     auto allowedInDomainName = [](char ch) -> bool {
-        return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '-' || ch == '.';
+        // The following line is a portability killer.
+        // Please, don't run this program on IBM mainframes.
+        return ('a' <= ch && ch <= 'z')
+            || ('A' <= ch && ch <= 'Z')
+            || ('0' <= ch && ch <= '9')
+            || ch == '-' || ch == '.';
     };
 
     auto allowedInPath = [&allowedInDomainName](char ch) -> bool {
-        return allowedInDomainName(ch) || ch == '/' || ch == ',';
-    };
+        return allowedInDomainName(ch)
+            || ch == '_'
+            || ch == '/'
+            || ch == '+'
+            || ch == ','; // I'm sure it a legal character, but who
+    };                    // wants to put a comma in their URLs?
 
     urlBegin = httpBegin;
-
     idx = httpEnd-1;
+
+    // Yes, you're right. The following is what you think. It's
+    // a hand-written finite automaton. It's kind of ugly, but
+    // is going to be faster than a regular expression.
 
 got_http:
     advance();
@@ -262,8 +297,8 @@ fail:
     return false;
 }
 
-// Convenience subroutine which sorts 'map' items by 'second' field,
-// and prints the most frequent items as a nice text table.
+// Sorts 'map' items by 'second' field, and prints the most frequent
+// items as a text table.
 void printTop(FrequencyMap const& map, UIndex maxNum){
 
     using Pointer = FrequencyMap::const_pointer;
@@ -276,18 +311,12 @@ void printTop(FrequencyMap const& map, UIndex maxNum){
         pointers.push_back(std::addressof(pair));
     }
 
-    // Just sort the vercor. I know, this is not not the best possible
+    // Just sort the vector. I know, this is not not the best possible
     // approach from the O() point of view, but I have not enough spare
     // time for elaborated algorithms in a test assignment.
     std::sort(pointers.begin(), pointers.end(),
               [](Pointer const& a, Pointer const& b) {
                           return a->second > b->second; });
-
-    // For some reason which is unclear to me, boost::adaptors::sliced
-    // fails when the requested slice size is greater than the range
-    // size. Instead of rolling out custom adaptor it's easier to
-    // adjust the requested size appropriately.
-    auto num = std::min(maxNum, pointers.size());
 
     UIndex i = 0;
     for (auto const& ptr: pointers) {
@@ -322,26 +351,32 @@ int main(int argc, char *argv[]) {
     }
 
     std::ifstream input(inputFn);
-    if (!input.is_open())
-        throw std::exception();
+    if (!input.is_open()) {
+        // Sorry, I'm not in mood to print errors nicely.
+        throw std::ios_base::failure(inputFn);
+    }
 
-    // The buffer size of 2**13 bytes (== 8 kB) should be large enough for
-    // batch reading, yet small enough to fit the processor cache.
-    RingArray<char, 8*1024> buf;
+    // I thought that the buffer size of 8 kB would be large enough for
+    // batch reading, yet small enough to fit the processor cache. However,
+    // tests had shown that larger buffers operate faster.
+    RingArray<char, 512*1024> buf;
 
     using OpState = std::tuple<bool, UIndex>;
     using Future = std::future<OpState>;
 
+    // Starts a background file read operation to populate the [begin, end)
+    // range of the circular buffer with fresh data.
     auto populate = [&](UIndex begin, UIndex end) -> Future {
         begin = buf.wrap(begin);
         end   = buf.wrap(end);
 
-        return std::async(std::launch::async, [&input, &buf, begin, end]() -> OpState {
+        return std::async(std::launch::async, [&input, &buf, begin, end]()
+                                                               -> OpState {
             if (!input.good())
                 return {false, begin};
 
             if (begin == end)
-                throw std::exception();
+                throw std::logic_error("This should never happen.");
 
             std::streamsize read = 0;
             if (begin < end) {
@@ -363,7 +398,6 @@ int main(int argc, char *argv[]) {
         });
     };
 
-
     FrequencyMap urlDomains, urlPaths;
     unsigned numMatches = 0;
 
@@ -375,6 +409,8 @@ int main(int argc, char *argv[]) {
         std::string urlPath;
 
         auto readString = [&](std::string& dest, UIndex begin, UIndex end) {
+            // Why not just create the result string? I'm just trying
+            // to avoid unneeded memory allocation.
             dest.clear();
             for (UIndex i = begin; i != end; i = buf.wrap(i+1))
                 dest.push_back(buf[i]);
@@ -390,16 +426,10 @@ int main(int argc, char *argv[]) {
         UIndex urlBegin, domainBegin, pathBegin, urlEnd = begin;
         bool foundAny = false;
         while (1) {
-            bool found = findUrl(buf, urlEnd, end, urlBegin, domainBegin, pathBegin, urlEnd);
+            bool found = findUrl(buf, urlEnd, end,
+                             urlBegin, domainBegin, pathBegin, urlEnd);
             if (!found)
                 break;
-
-            // Check.
-            if (buf[urlBegin+0] != 'h'
-             || buf[urlBegin+1] != 't'
-             || buf[urlBegin+2] != 't'
-             || buf[urlBegin+3] != 'p')
-                std::logic_error("Found something bad");
 
             foundAny = true;
             ++numMatches;
@@ -412,8 +442,6 @@ int main(int argc, char *argv[]) {
 
             addEntry(urlDomains, urlDomain);
             addEntry(urlPaths, urlPath);
-
-            //std::cout << "FOUND: " << ' ' << urlDomain << ' ' << urlPath << std::endl;
         }
 
         return {foundAny, urlEnd};
@@ -425,13 +453,11 @@ int main(int argc, char *argv[]) {
     bool readAny;
     UIndex readEnd;
     std::tie(readAny, readEnd) = future.get();
-    if (!readAny)
-        return 0;
 
     UIndex searchBegin = 0;
     UIndex searchEnd   = readEnd;
 
-    while (1) {
+    while (readAny) {
         auto future = populate(searchEnd, searchBegin);
 
         bool matchAny;
@@ -439,18 +465,11 @@ int main(int argc, char *argv[]) {
         std::tie(matchAny, matchEnd) =
                                 processMatches(searchBegin, searchEnd);
 
-        //std::cout << "HERE\n";
         future.wait();
 
-        bool readAny;
-        UIndex readEnd;
         std::tie(readAny, readEnd) = future.get();
         if (!readAny)
             break;
-
-        // Buffer too small?
-        if (matchEnd == searchBegin)
-            ;
 
         searchBegin = matchEnd;
         searchEnd = readEnd;
@@ -458,10 +477,13 @@ int main(int argc, char *argv[]) {
 
     std::cout << "total urls " << numMatches   << ", "
               << "domains "    << urlDomains.size() << ", "
-              << "paths "      << urlPaths.size() << std::endl;
-    std::cout << "Most frequent hostnames:" << std::endl;
-    printTop(urlDomains, maxNum);
+              << "paths "      << urlPaths.size() << std::endl
+                                                  << std::endl;
 
-    std::cout << "Most frequent paths:" << std::endl;
+    std::cout << "top domains" << std::endl;
+    printTop(urlDomains, maxNum);
+    std::cout << std::endl;
+
+    std::cout << "top paths" << std::endl;
     printTop(urlPaths, maxNum);
 }
