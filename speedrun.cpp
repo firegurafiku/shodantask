@@ -71,8 +71,8 @@ template <UIndex N>
 bool findHttp(RingArray<char, N> const& buf,
               UIndex begin, UIndex end, UIndex& matchBegin, UIndex& matchEnd) {
 
-    constexpr UIndex patlen = 4;
-    constexpr const char* pat = "http";
+    const UIndex patlen = 4;
+    const char* pat = "http";
 
     static UIndex delta1[] = {
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
         return std::async(std::launch::async, [&input, &buf, begin, end]()
                                                                -> OpState {
             if (!input.good())
-                return {false, begin};
+                return std::make_tuple(false, begin);
 
             if (begin == end)
                 throw std::logic_error("This should never happen.");
@@ -394,9 +394,9 @@ int main(int argc, char *argv[]) {
             }
 
             if (read == 0)
-                return {false, begin};
+                return std::make_tuple(false, begin);
 
-            return {true, buf.wrap(begin + read)};
+            return std::make_tuple(true, buf.wrap(begin + read));
         });
     };
 
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
             addEntry(urlPaths, urlPath);
         }
 
-        return {foundAny, urlEnd};
+        return std::make_tuple(foundAny, urlEnd);
     };
 
     auto future = populate(0, buf.size()/2);
