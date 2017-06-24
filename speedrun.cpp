@@ -299,7 +299,7 @@ fail:
 
 // Sorts 'map' items by 'second' field, and prints the most frequent
 // items as a text table.
-void printTop(FrequencyMap const& map, UIndex maxNum){
+void printTop(std::ofstream& out, FrequencyMap const& map, UIndex maxNum){
 
     using Pointer = FrequencyMap::const_pointer;
 
@@ -317,13 +317,14 @@ void printTop(FrequencyMap const& map, UIndex maxNum){
     std::sort(pointers.begin(), pointers.end(),
               [](Pointer const& a, Pointer const& b) {
                           return a->second > b->second; });
+    });
 
     UIndex i = 0;
     for (auto const& ptr: pointers) {
         if (i++ >= maxNum)
             break;
 
-        std::cout << ptr->second << ' ' << ptr->first << std::endl;
+        out << ptr->second << ' ' << ptr->first << std::endl;
     }
 }
 
@@ -475,15 +476,19 @@ int main(int argc, char *argv[]) {
         searchEnd = readEnd;
     }
 
-    std::cout << "total urls " << numMatches   << ", "
-              << "domains "    << urlDomains.size() << ", "
-              << "paths "      << urlPaths.size() << std::endl
-                                                  << std::endl;
+    std::ofstream output(outputFn);
+    if (!output.is_open())
+        throw std::ios_base::failure(outputFn);
 
-    std::cout << "top domains" << std::endl;
-    printTop(urlDomains, maxNum);
-    std::cout << std::endl;
+    output << "total urls " << numMatches        << ", "
+           << "domains "    << urlDomains.size() << ", "
+           << "paths "      << urlPaths.size()   << std::endl
+                                                 << std::endl;
 
-    std::cout << "top paths" << std::endl;
-    printTop(urlPaths, maxNum);
+    output << "top domains" << std::endl;
+    printTop(output, urlDomains, maxNum);
+    output << std::endl;
+
+    output << "top paths" << std::endl;
+    printTop(output, urlPaths, maxNum);
 }
