@@ -316,7 +316,9 @@ void printTop(std::ofstream& out, FrequencyMap const& map, UIndex maxNum){
     // time for elaborated algorithms in a test assignment.
     std::sort(pointers.begin(), pointers.end(),
               [](Pointer const& a, Pointer const& b) {
-                          return a->second > b->second; });
+                  if (a->second == b->second)
+                      return a->first < b->first;
+                  return (a->second > b->second);
     });
 
     UIndex i = 0;
