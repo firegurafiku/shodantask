@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
