@@ -1,16 +1,16 @@
-#include <cstring>
-#include <iostream>
-#include <ios>
-#include <fstream>
-#include <string>
-#include <atomic>
-#include <thread>
-#include <future>
-#include <cstdint>
-#include <tuple>
-#include <vector>
 #include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstring>
+#include <fstream>
+#include <future>
+#include <ios>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <tuple>
 #include <unordered_map>
+#include <vector>
 
 /*
  * Integral type to store ring buffer index. This type is intentionally
