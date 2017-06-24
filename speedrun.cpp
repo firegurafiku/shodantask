@@ -50,7 +50,7 @@ public:
      * Index the underlying array with a wrapped around index value. Since
      * every possible 'idx' value is correct, these functions must be used
      * with care. More over, to tell the truth, dealing with ring buffer
-     * idices really hurts.
+     * indices really hurts.
      */
     T const& operator [] (UIndex idx) const { return buf[idx % N]; }
     T      & operator [] (UIndex idx)       { return buf[idx % N]; }
@@ -63,7 +63,7 @@ private:
 /*
  * An ad-hoc implementation for a function which looks for literal sting
  * "http" in a ring buffer of chars. It uses Wikipedia's implementation of
- * Boyer-Moore string search algorithm with search tables precalculated
+ * Boyer-Moore string search algorithm with search tables pre-calculated
  * for the particular search pattern. Shodan, this part of code is written
  * this way especially for you. Enjoy :).
  */
@@ -310,7 +310,7 @@ void printTop(std::ofstream& out, FrequencyMap const& map, UIndex maxNum){
         pointers.push_back(std::addressof(pair));
     }
 
-    // Just sort the vector. I know, this is not not the best possible
+    // Just sort the vector. I know, this is not the best possible
     // approach from the O() point of view, but I have not enough spare
     // time for elaborated algorithms in a test assignment.
     std::sort(pointers.begin(), pointers.end(),
