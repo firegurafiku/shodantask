@@ -5,6 +5,15 @@ project(shodantask)
 # require linking (not header-only).
 find_package(Boost 1.60 COMPONENTS coroutine)
 
+add_executable(speedrun
+    speedrun.cpp)
+
+target_link_libraries(speedrun -lpthread)
+
+set_target_properties(speedrun PROPERTIES
+    CXX_STANDARD_REQUIRED FALSE
+    CXX_STANDARD          11)
+
 add_executable(shodantask
     src/Helpers.hpp
     src/MemoryMappedFile.cpp
